@@ -1,0 +1,225 @@
+#! /usr/bin/env ruby
+require 'readline'
+require 'colorb'
+require 'necter'
+
+unless Necter.daemon?
+	puts "Connection to connman failed".red
+	exit 1
+end
+
+class CLI
+	def self.commands
+		@commands ||= {}
+	end
+
+	def self.command(name, &block)
+		commands[name] = block
+	end
+
+	def self.completions
+		@completions ||= {}
+	end
+
+	def self.completion(name, &block)
+		completions[name] = block
+	end
+
+	def initialize
+		@manager = Necter::Manager.new
+		@agent   = @manager.agent do |agent|
+			agent.cancel do
+			end
+
+			agent.error do |network, error|
+				print "agent "
+				puts  error.red
+			end
+
+			agent.browser do |network, url|
+				print url
+				puts  " you should check".green
+			end
+
+			agent.input do |network, request|
+				if request.ssid?
+					print "SSID? "
+					request.ssid = gets.chomp
+				end
+
+				if request.identity?
+					print "Identity? "
+					request.identity = gets.chomp
+				end
+
+				if request.passphrase?
+					print "Passphrase? "
+					request.passphrase = gets.chomp
+				end
+
+				if request.username?
+					print "Username? "
+					request.username = gets.chomp
+				end
+
+				if request.password?
+					print "Password? "
+					request.password = gets.chomp
+				end
+			end
+		end
+	end
+
+	def start(command)
+		if command.empty?
+			Readline.completion_proc = method(:complete)
+
+			while line = Readline.readline(prompt, true)
+				execute(line)
+			end
+		else
+			execute(command.join(' '))
+		end
+	rescue Interrupt
+	end
+
+	def prompt
+		'>> '
+	end
+
+	def complete(input)
+		if input =~ /\s/
+			command, input = input.split(/\s/, 2)
+
+			if block = self.class.completions[command.to_sym]
+				instance_exec input, &block
+			end
+		else
+			[]
+		end
+	end
+
+	def execute(input)
+		command, input = input.split(/\s/, 2)
+
+		if block = self.class.commands[command.to_sym]
+			instance_exec input, &block
+		else
+			print "#{command}: "
+			puts  "command not found".red
+		end
+	end
+
+	command :scan! do |input|
+		if input
+			@manager.technologies.by_name(input).scan!
+		else
+			@manager.technologies.each {|tech|
+				tech.scan! rescue nil
+			}
+		end
+
+		execute('scan')
+	end
+
+	command :scan do |input|
+		networks = @manager.networks.to_a
+		
+		networks.each_with_index {|net, i|
+			"#{i}".ljust(networks.length > 9 ? 2 : 1).tap {|s|
+				if networks.any? { |n| n.online? }
+					if net.online?
+						print "#{s.white.bold}!"
+					else
+						print "#{s} "
+					end
+				else
+					print s
+				end
+
+				print ' '
+			}
+
+			net.security.tap {|sec|
+				case net.security.first
+				when :none
+					print '^_^'.green
+
+				when :wep
+					print 'WEP'.yellow
+
+				when :wps
+					print 'WPS'.yellow
+
+				when :psk
+					print 'WPA'.red
+				end
+
+				print ' '
+			}
+
+			"#{net.strength}%".rjust(networks.any? { |n| n.strength == 100 } ? 4 : 3).tap {|s|
+				if net.strength < 40
+					print s.red
+				elsif net.strength < 70
+					print s.yellow
+				else
+					print s.green
+				end
+
+				print ' '
+			}
+
+			puts net.name
+		}
+	end
+
+	command :disconnect do
+		network = @manager.networks.find(&:online?)
+
+		begin
+			network.disconnect!
+		rescue DBus::Error
+			print network.name
+			puts  " disconnection failed".red
+		else
+			print network.name
+			puts  " disconnection succesful".green
+		end if network
+	end
+
+	command :connect do |input|
+		network = if index = Integer(input) rescue nil
+			@manager.networks.to_a[index]
+		else
+			@manager.networks[input]
+		end
+
+		unless network
+			print input
+			puts " network not found".red
+
+			next
+		end
+
+		begin
+			network.connect!
+		rescue DBus::Error
+			print network.name
+			puts  " connection failed".red
+		else
+			print network.name
+			puts  " connection successful".green
+		end
+	end
+
+	command :offline do
+		@manager.properties.offline!
+	end
+
+	command :online do
+		@manager.properties.online!
+	end
+end
+
+CLI.new.start(ARGV)
