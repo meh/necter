@@ -80,7 +80,7 @@ module Necter
 
 			def save!
 				@network.send! :SetProperty, "IPv#{@version || 4}.Configuration",
-					@hash["IPv#{@version || 4}.Configuration"]
+					DBus.variant("a{sv}", @hash["IPv#{@version || 4}.Configuration"])
 			end
 
 			def method=(value)
