@@ -15,6 +15,7 @@ module Necter
 		autoload :IP, 'necter/network/ip'
 		autoload :Nameservers, 'necter/network/nameservers'
 		autoload :Timeservers, 'necter/network/timeservers'
+		autoload :Domains, 'necter/network/domains'
 		autoload :Device, 'necter/network/device'
 
 		def initialize(*args)
@@ -59,6 +60,10 @@ module Necter
 
 		def timeservers
 			Timeservers.new(self)
+		end
+
+		def domains
+			Domains.new(self)
 		end
 
 		def security
