@@ -14,6 +14,7 @@ module Necter
 	class Network < Interface.for("net.connman.Service")
 		autoload :IP, 'necter/network/ip'
 		autoload :Nameservers, 'necter/network/nameservers'
+		autoload :Timeservers, 'necter/network/timeservers'
 		autoload :Device, 'necter/network/device'
 
 		def initialize(*args)
@@ -54,6 +55,10 @@ module Necter
 
 		def nameservers
 			Nameservers.new(self)
+		end
+
+		def timeservers
+			Timeservers.new(self)
 		end
 
 		def security
