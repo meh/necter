@@ -15,13 +15,13 @@ module Necter
 				attr_reader :path
 
 				define_method :initialize do |path = nil|
-					@path    = path
-					@bus     = DBus::SystemBus.instance
-					@service = @bus["net.connman"]
-					@object  = @service.object(path || "/")
-					@object.introspect
+					bus     = DBus::SystemBus.instance
+					service = bus["net.connman"]
+					object  = service.object(path || "/")
+					object.introspect
 
-					@self = @object[interface]
+					@path = path
+					@self = object[interface]
 				end
 
 				define_method :send! do |*args|
