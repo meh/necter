@@ -27,7 +27,11 @@ module Necter
 		end
 
 		def [](value)
-			by_path(value) || by_name(value)
+			if Integer === value
+				to_a[value]
+			else
+				by_path(value) || by_name(value)
+			end
 		end
 
 		def by_path(path)
