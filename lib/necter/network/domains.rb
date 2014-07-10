@@ -30,16 +30,20 @@ module Necter
 		end
 
 		def configuration
-			Configuration.new(@hash)
+			Configuration.new(@network)
 		end
 
 		def configuration=(*values)
-			@network.send! :SetProperty, "Domains.Configuration", values.flatten.map(&:to_s)
+			@network.send! :SetProperty, "Domains.Configuration",
+				DBus.variant("as", values.flatten.map(&:to_s))
 		end
 
 		class Configuration
-			def initialize(hash)
-				@hash = hash
+			attr_reader :network
+
+			def initialize(network)
+				@network = network
+				@hash    = network.to_h
 			end
 
 			include Enumerable
