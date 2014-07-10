@@ -25,7 +25,7 @@ module Necter
 			return enum_for :each unless block
 
 			@hash["Nameservers"].each {|ip|
-				block.call IPAddress.new(ip)
+				block.call IPAddr.new(ip)
 			}
 
 			self
@@ -36,7 +36,7 @@ module Necter
 		end
 
 		def configuration=(*values)
-			@self.SetProperty("Nameservers.Configuration", servers.flatten.map(&:to_s))
+			@network.send! :SetProperty, "Nameservers.Configuration", values.flatten.map(&:to_s)
 		end
 
 		class Configuration
@@ -50,7 +50,7 @@ module Necter
 				return enum_for :each unless block
 
 				@hash["Nameservers.Configuration"].each {|ip|
-					block.call IPAddress.new(ip)
+					block.call IPAddr.new(ip)
 				}
 
 				self
