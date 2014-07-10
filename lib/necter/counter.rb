@@ -18,9 +18,9 @@ module Necter
 			@manager = manager
 			@block   = block
 
-			@bus     = DBus::SystemBus.instance
-			@service = @bus.instance_variable_get(:@service)
-			@service.export(self)
+			bus     = DBus::SystemBus.instance
+			service = bus.instance_variable_get(:@service)
+			service.export(self)
 		end
 
 		def release
