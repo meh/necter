@@ -12,8 +12,11 @@ require 'hwaddr'
 
 module Necter
 	class Network::Device
-		def initialize(descriptor)
-			@hash = descriptor
+		attr_reader :network
+
+		def initialize(network)
+			@network = network
+			@hash    = network.to_h
 		end
 
 		def method

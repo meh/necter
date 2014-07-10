@@ -13,11 +13,12 @@ require 'ipaddr'
 
 module Necter
 	class Network::IP
-		attr_reader :version
+		attr_reader :network, :version
 
-		def initialize(descriptor, version = nil)
-			@hash    = descriptor
-			@version = nil
+		def initialize(network, version = nil)
+			@network = network
+			@hash    = network.to_h
+			@version = version
 		end
 
 		def v4?
@@ -25,11 +26,11 @@ module Necter
 		end
 
 		def v4
-			IP.new(@hash, 4)
+			self.class.new(@network, 4)
 		end
 
 		def v6
-			IP.new(@hash, 6)
+			self.class.new(@network, 6)
 		end
 
 		def v6?

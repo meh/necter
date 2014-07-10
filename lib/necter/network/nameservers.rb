@@ -8,14 +8,15 @@
 #  0. You just DO WHAT THE FUCK YOU WANT TO.
 #++
 
-require 'hwaddr'
 require 'ipaddr'
 
 module Necter
 	class Network::Nameservers
-		def initialize(network, descriptor)
-			@self = network
-			@hash = descriptor
+		attr_reader :network
+
+		def initialize(network)
+			@network = network
+			@hash    = network.to_h
 		end
 
 		include Enumerable

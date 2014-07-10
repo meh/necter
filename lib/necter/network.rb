@@ -41,7 +41,7 @@ module Necter
 		end
 
 		def device
-			Device.new(@hash)
+			Device.new(self)
 		end
 
 		def type
@@ -49,11 +49,11 @@ module Necter
 		end
 
 		def ip
-			IP.new(@hash)
+			IP.new(self)
 		end
 
 		def nameservers
-			Nameservers.new(@self, @hash)
+			Nameservers.new(self)
 		end
 
 		def security
