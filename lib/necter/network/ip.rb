@@ -38,7 +38,7 @@ module Necter
 		end
 
 		def configuration
-			Configuration.new(@hash, @version)
+			Configuration.new(@network, @version)
 		end
 
 		def address
@@ -70,9 +70,21 @@ module Necter
 		end
 		
 		class Configuration
-			def initialize(hash, version)
-				@hash    = hash
+			attr_reader :network, :version
+
+			def initialize(network, version)
+				@network = network
+				@hash    = network.to_h
 				@version = version
+			end
+
+			def save!
+				@network.send! :SetProperty, "IPv#{@version || 4}.Configuration",
+					@hash["IPv#{@version || 4}.Configuration"]
+			end
+
+			def method=(value)
+				@hash["IPv#{@version || 4}.Configuration"] = { "Method" => value }
 			end
 
 			def method
@@ -83,13 +95,23 @@ module Necter
 				end.to_sym
 			end
 
+			def address=(value)
+				@hash["IPv#{@version || 4}.Configuration"]["Address"] = value.to_s
+			end
+
 			def address
 				if @version
-					IPAddr.new(@hash["IPv#@version.Configuration"]["Address"]) if @hash["IPv#@version.Configuration"]["Address"]
+					if @hash["IPv#@version.Configuration"]["Address"]
+						IPAddr.new(@hash["IPv#@version.Configuration"]["Address"])
+					end
 				else
 					IPAddr.new(@hash["IPv4.Configuration"]["Address"] ||
-				           	 @hash["IPv6.Configuration"]["Address"])
+					           @hash["IPv6.Configuration"]["Address"])
 				end
+			end
+
+			def netmask=(value)
+				@hash["IPv#{@version || 4}.Configuration"]["Netmask"] = value.to_s
 			end
 
 			def netmask
@@ -101,6 +123,10 @@ module Necter
 				end
 			end
 
+			def gateway=(value)
+				@hash["IPv#{@version || 4}.Configuration"]["Gateway"] = value.to_s
+			end
+
 			def gateway
 				if @version
 					if @hash["IPv#@version.Configuration"]["Gateway"]
@@ -108,11 +134,15 @@ module Necter
 					end
 				else
 					IPAddr.new(@hash["IPv4.Configuration"]["Gateway"] ||
-				           	 @hash["IPv6.Configuration"]["Gateway"])
+					           @hash["IPv6.Configuration"]["Gateway"])
 				end
 			end
 
 			def privacy
+				if @version == 4
+					raise ArgumentError, "no privacy settings for IPv4"
+				end
+
 				@hash["IPv6.Configuration"]["Privacy"].to_sym
 			end
 
