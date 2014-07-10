@@ -22,9 +22,9 @@ module Necter
 
 			block.call(@callbacks = Callbacks.new)
 
-			@bus     = DBus::SystemBus.instance
-			@service = @bus.instance_variable_get(:@service)
-			@service.export(self)
+			bus     = DBus::SystemBus.instance
+			service = bus.instance_variable_get(:@service)
+			service.export(self)
 		end
 
 		def release
