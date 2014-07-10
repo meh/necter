@@ -34,6 +34,10 @@ module Necter
 			@self.Disconnect
 		end
 
+		def remove!
+			@self.Remove
+		end
+
 		def auto_connect=(value)
 			@self.SetProperty("AutoConnect", value)
 		end
