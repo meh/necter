@@ -30,6 +30,10 @@ module Necter
 			@hash["Powered"]
 		end
 
+		def powered=(value)
+			@self.SetProperty("Powered", value)
+		end
+
 		def connected?
 			@hash["Connected"]
 		end
