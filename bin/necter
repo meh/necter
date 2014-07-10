@@ -25,51 +25,6 @@ class CLI
 		completions[name] = block
 	end
 
-	def initialize
-		@manager = Necter::Manager.new
-		@agent   = @manager.agent do |agent|
-			agent.cancel do
-			end
-
-			agent.error do |network, error|
-				print "agent "
-				puts  error.red
-			end
-
-			agent.browser do |network, url|
-				print url
-				puts  " you should check".green
-			end
-
-			agent.input do |network, request|
-				if request.ssid?
-					print "SSID? "
-					request.ssid = gets.chomp
-				end
-
-				if request.identity?
-					print "Identity? "
-					request.identity = gets.chomp
-				end
-
-				if request.passphrase?
-					print "Passphrase? "
-					request.passphrase = gets.chomp
-				end
-
-				if request.username?
-					print "Username? "
-					request.username = gets.chomp
-				end
-
-				if request.password?
-					print "Password? "
-					request.password = gets.chomp
-				end
-			end
-		end
-	end
-
 	def start(command)
 		if command.empty?
 			Readline.completion_proc = method(:complete)
@@ -78,7 +33,7 @@ class CLI
 				execute(line)
 			end
 		else
-			execute(command.join(' '))
+			execute(command || "")
 		end
 	rescue Interrupt
 	end
@@ -103,123 +58,368 @@ class CLI
 		command, input = input.split(/\s/, 2)
 
 		if block = self.class.commands[command.to_sym]
-			instance_exec input, &block
+			instance_exec input || "", &block
 		else
 			print "#{command}: "
 			puts  "command not found".red
 		end
 	end
 
-	command :scan! do |input|
-		if input
-			@manager.technologies.by_name(input).scan!
-		else
-			@manager.technologies.each {|tech|
-				tech.scan! rescue nil
-			}
-		end
+	class Manager < self
+		def initialize
+			@manager = Necter::Manager.new
+			@agent   = @manager.agent do |agent|
+				agent.cancel do
+				end
 
-		execute('scan')
-	end
+				agent.error do |network, error|
+					print "agent "
+					puts  error.red
+				end
 
-	command :scan do |input|
-		networks = @manager.networks.to_a
-		
-		networks.each_with_index {|net, i|
-			"#{i}".ljust(networks.length > 9 ? 2 : 1).tap {|s|
-				if networks.any? { |n| n.online? }
-					if net.online?
-						print "#{s.white.bold}!"
-					else
-						print "#{s} "
+				agent.browser do |network, url|
+					print url
+					puts  " you should check".green
+				end
+
+				agent.input do |network, request|
+					if request.ssid?
+						print "SSID? "
+						request.ssid = gets.chomp
 					end
+
+					if request.identity?
+						print "Identity? "
+						request.identity = gets.chomp
+					end
+
+					if request.passphrase?
+						print "Passphrase? "
+						request.passphrase = gets.chomp
+					end
+
+					if request.username?
+						print "Username? "
+						request.username = gets.chomp
+					end
+
+					if request.password?
+						print "Password? "
+						request.password = gets.chomp
+					end
+				end
+			end
+		end
+
+		command :technologies do
+		end
+
+		command :enable do |input|
+			if technology = @manager.technologies[(Integer(input) rescue input)]
+				begin
+					technology.powered = true
+				rescue DBus::Error
+					print technology.name
+					puts  " failed to be enabled".red
 				else
-					print s
+					print technology.name
+					puts  " enabled".green
 				end
+			else
+				print input
+				puts  " not found".red
+			end
+		end
 
-				print ' '
-			}
-
-			net.security.tap {|sec|
-				case net.security.first
-				when :none
-					print '^_^'.green
-
-				when :wep
-					print 'WEP'.yellow
-
-				when :wps
-					print 'WPS'.yellow
-
-				when :psk
-					print 'WPA'.red
-				end
-
-				print ' '
-			}
-
-			"#{net.strength}%".rjust(networks.any? { |n| n.strength == 100 } ? 4 : 3).tap {|s|
-				if net.strength < 40
-					print s.red
-				elsif net.strength < 70
-					print s.yellow
+		command :disable do |input|
+			if technology = @manager.technologies[(Integer(input) rescue input)]
+				begin
+					technology.powered = false
+				rescue DBus::Error
+					print technology.name
+					puts  " failed to be disabled".red
 				else
-					print s.green
+					print technology.name
+					puts  " disabled".green
 				end
+			else
+				print input
+				puts  " not found".red
+			end
+		end
 
-				print ' '
+		command :scan! do |input|
+			if input.empty?
+				@manager.technologies.each {|tech|
+					tech.scan! rescue nil
+				}
+			else
+				@manager.technologies.by_name(input).scan!
+			end
+
+			execute('scan')
+		end
+
+		command :scan do |input|
+			networks = @manager.networks.to_a
+
+			networks.each_with_index {|net, i|
+				"#{i}".ljust(networks.length > 9 ? 2 : 1).tap {|s|
+					if networks.any? { |n| n.online? }
+						if net.online?
+							print "#{s.white.bold}!"
+						else
+							print "#{s} "
+						end
+					else
+						print s
+					end
+
+					print ' '
+				}
+
+				net.security.tap {|sec|
+					case net.security.first
+					when :none
+						print '^_^'.green
+
+					when :wep
+						print 'WEP'.yellow
+
+					when :wps
+						print 'WPS'.yellow
+
+					when :psk
+						print 'WPA'.red
+					end
+
+					print ' '
+				}
+
+				"#{net.strength}%".rjust(networks.any? { |n| n.strength == 100 } ? 4 : 3).tap {|s|
+					if net.strength < 40
+						print s.red
+					elsif net.strength < 70
+						print s.yellow
+					else
+						print s.green
+					end
+
+					print ' '
+				}
+
+				if net.name
+					puts net.name
+				else
+					puts "<hidden>".black.bold
+				end
 			}
-
-			puts net.name
-		}
-	end
-
-	command :disconnect do
-		network = @manager.networks.find(&:online?)
-
-		begin
-			network.disconnect!
-		rescue DBus::Error
-			print network.name
-			puts  " disconnection failed".red
-		else
-			print network.name
-			puts  " disconnection succesful".green
-		end if network
-	end
-
-	command :connect do |input|
-		network = if index = Integer(input) rescue nil
-			@manager.networks.to_a[index]
-		else
-			@manager.networks[input]
 		end
 
-		unless network
-			print input
-			puts " network not found".red
-
-			next
+		command :disconnect do
+			if network = @manager.networks.find(&:online?)
+				begin
+					network.disconnect!
+				rescue DBus::Error
+					print network.name
+					puts  " disconnection failed".red
+				else
+					print network.name
+					puts  " disconnection succesful".green
+				end
+			else
+				puts "Already disconnected".green
+			end
 		end
 
-		begin
-			network.connect!
-		rescue DBus::Error
-			print network.name
-			puts  " connection failed".red
-		else
-			print network.name
-			puts  " connection successful".green
+		command :connect do |input|
+			network = @manager.networks[(Integer(input) rescue input)]
+
+			unless network
+				print input
+				puts " network not found".red
+
+				next
+			end
+
+			begin
+				network.connect!
+			rescue DBus::Error
+				print network.name
+				puts  " connection failed".red
+			else
+				print network.name
+				puts  " connection successful".green
+			end
+		end
+
+		command :offline do
+			@manager.properties.offline!
+		end
+
+		command :online do
+			@manager.properties.online!
+		end
+
+		command :remove do |input|
+			if network = @manager.networks[(Integer(input) rescue input)]
+				network.remove!
+			elsif network = @manager.networks.find(&:online?)
+				network.remove!
+			else
+				print "remove"
+				puts  " no network found".red
+			end
+		end
+
+		command :info do |input|
+			network, rest = input.split(/\s/, 2)
+
+			if network = @manager.networks[(Integer(network) rescue network)]
+				Info.new(network).start(rest || "")
+			elsif network = @manager.networks.find(&:online?)
+				Info.new(network).start(input)
+			else
+				print "info"
+				puts  " no network found".red
+			end
+		end
+
+		command :config do |input|
+			network, rest = input.split(/\s/, 2)
+
+			if network = @manager.networks[(Integer(network) rescue network)]
+				Config.new(network).start(rest || "")
+			elsif network = @manager.networks.find(&:online?)
+				Config.new(network).start(input)
+			else
+				print "config"
+				puts  " no network found".red
+			end
 		end
 	end
 
-	command :offline do
-		@manager.properties.offline!
+	class Info < self
+		def initialize(network)
+			@network = network
+		end
+
+		def start(command)
+			super(command)
+
+			if command.empty?
+				print "\r#{' ' * (@network.name.length + 3)}\r"
+			end
+		end
+
+		def prompt
+			"#{@network.name}? "
+		end
+
+		command :raw do
+			require 'pp'
+			pp @network.to_h
+		end
+
+		command :nameservers do
+			puts @network.nameservers.to_a.join(' ')
+		end
+
+		command :timeservers do
+			puts @network.timeservers.to_a.join(' ')
+		end
+
+		command :timeservers do
+			puts @network.domains.to_a.join(' ')
+		end
 	end
 
-	command :online do
-		@manager.properties.online!
+	class Config < self
+		def initialize(network)
+			@network = network
+		end
+
+		def start(command)
+			super(command)
+
+			if command.empty?
+				print "\r#{' ' * (@network.name.length + 3)}\r"
+			end
+		end
+
+		def prompt
+			"#{@network.name}> "
+		end
+
+		command :nameservers do |input|
+			if input.empty?
+				puts @network.nameservers.configuration.to_a.join(" ")
+			else
+				@network.nameservers.configuration = input.split(/\s+/)
+			end
+		end
+
+		command :timeservers do |input|
+			if input.empty?
+				puts @network.timeservers.configuration.to_a.join(" ")
+			else
+				@network.timeservers.configuration = input.split(/\s+/)
+			end
+		end
+
+		command :domains do |input|
+			if input.empty?
+				puts @network.domains.configuration.to_a.join(" ")
+			else
+				@network.domains.configuration = input.split(/\s+/)
+			end
+		end
+
+		command :ip do |input|
+			if input.empty?
+
+			else
+				if input == "off" || input == "dhcp"
+					@network.ip.v4.configuration.tap {|conf|
+						conf.method = input.to_sym
+						conf.save!
+					}
+				else
+					@network.ip.v4.configuration.tap {|conf|
+						conf.method = :manual
+
+						input.split(/\s+/).each_slice(2) {|name, value|
+							conf.send "#{name}=", value
+						}
+
+						conf.save!
+					}
+				end
+			end
+		end
+
+		command :ipv6 do |input|
+			if input.empty?
+			else
+				if input == "off" || input == "dhcp"
+					@network.ip.v6.configuration.tap {|conf|
+						conf.method = input.to_sym
+						conf.save!
+					}
+				else
+					@network.ip.v6.configuration.tap {|conf|
+						conf.method = :manual
+
+						input.split(/\s+/).each_slice(2) {|name, value|
+							conf.send "#{name}=", value
+						}
+
+						conf.save!
+					}
+				end
+			end
+		end
 	end
 end
 
-CLI.new.start(ARGV)
+CLI::Manager.new.start(ARGV.join(" "))
