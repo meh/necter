@@ -84,7 +84,9 @@ module Necter
 			end
 
 			def method=(value)
-				@hash["IPv#{@version || 4}.Configuration"] = { "Method" => value }
+				if @hash["IPv#{@version || 4}.Configuration"]["Method"] != value.to_s
+					@hash["IPv#{@version || 4}.Configuration"] = { "Method" => value.to_s }
+				end
 			end
 
 			def method
