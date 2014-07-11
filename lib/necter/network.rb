@@ -24,6 +24,10 @@ module Necter
 			end
 
 			@hash = args.shift
+
+			@self.on_signal "PropertyChanged" do |key, value|
+				@hash[key] = value
+			end
 		end
 
 		def connect!
