@@ -10,8 +10,11 @@
 
 module Necter
 	class Manager::Technologies
-		def initialize(list)
-			@list = list.first.map {|path, descriptor|
+		attr_reader :manager
+
+		def initialize(manager, list)
+			@manager = manager
+			@list    = list.map {|path, descriptor|
 				Technology.new(path, descriptor)
 			}
 		end

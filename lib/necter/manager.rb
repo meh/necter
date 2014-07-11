@@ -27,7 +27,7 @@ module Necter
 		end
 
 		def technologies
-			Technologies.new(@self.GetTechnologies)
+			Technologies.new(self, *@self.GetTechnologies)
 		end
 
 		def agent(&block)
