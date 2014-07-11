@@ -36,7 +36,7 @@ module Necter
 		end
 
 		def configuration=(*values)
-			@network.send! :SetProperty, "Timeservers.Configuration",
+			@network["Timeservers.Configuration"] =
 				DBus.variant("as", values.flatten.map(&:to_s))
 		end
 

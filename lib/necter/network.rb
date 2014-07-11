@@ -30,6 +30,14 @@ module Necter
 			end
 		end
 
+		def [](name)
+			@hash[name]
+		end
+
+		def []=(name, value)
+			@self.SetProperty(name, value)
+		end
+
 		def connect!
 			@self.Connect
 		end

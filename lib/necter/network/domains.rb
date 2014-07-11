@@ -34,7 +34,7 @@ module Necter
 		end
 
 		def configuration=(*values)
-			@network.send! :SetProperty, "Domains.Configuration",
+			@network["Domains.Configuration"] =
 				DBus.variant("as", values.flatten.map(&:to_s))
 		end
 
