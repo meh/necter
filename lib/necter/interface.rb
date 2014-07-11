@@ -23,10 +23,6 @@ module Necter
 					@path = path
 					@self = object[interface]
 				end
-
-				define_method :send! do |*args|
-					@self.__send__(*args)
-				end
 			end
 		end
 	end
