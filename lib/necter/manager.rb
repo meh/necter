@@ -15,7 +15,7 @@ module Necter
 		autoload :Technologies, 'necter/manager/technologies'
 
 		def properties
-			Properties.new(@self, *@self.GetProperties)
+			Properties.new(self, *@self.GetProperties)
 		end
 
 		def networks

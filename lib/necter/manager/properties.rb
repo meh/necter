@@ -10,13 +10,15 @@
 
 module Necter
 	class Manager::Properties
-		attr_reader :state
+		attr_reader :manager
 
 		def initialize(manager, hash)
-			@self    = manager
-			@state   = hash["State"].to_sym
-			@offline = hash["OfflineMode"]
-			@session = hash["SessionMode"]
+			@manager = manager
+			@hash    = hash
+		end
+
+		def state
+			@hash["State"].to_sym
 		end
 
 		def online?
@@ -28,7 +30,7 @@ module Necter
 		end
 
 		def offline?
-			@offline
+			@hash["OfflineMode"]
 		end
 
 		def offline!
@@ -36,7 +38,7 @@ module Necter
 		end
 
 		def session?
-			@session
+			@hash["SessionMode"]
 		end
 	end
 end
