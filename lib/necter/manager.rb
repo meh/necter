@@ -19,7 +19,7 @@ module Necter
 		end
 
 		def networks
-			Networks.new(@self.GetServices)
+			Networks.new(self, *@self.GetServices)
 		end
 
 		def peers
