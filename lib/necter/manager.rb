@@ -12,6 +12,7 @@ module Necter
 	class Manager < Interface.for("net.connman.Manager")
 		autoload :Properties, 'necter/manager/properties'
 		autoload :Networks, 'necter/manager/networks'
+		autoload :Peers, 'necter/manager/peers'
 		autoload :Technologies, 'necter/manager/technologies'
 
 		def properties
@@ -23,7 +24,7 @@ module Necter
 		end
 
 		def peers
-			@self.GetPeers.first
+			Peers.new(self, *@self.GetPeers)
 		end
 
 		def technologies
